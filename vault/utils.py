@@ -93,6 +93,13 @@ def fetch_card_price(card_name: str, set_name: str):
         if resp.status_code == 200:
             return resp.json()
         # if not, fail gracefully
+        logger.warning(
+            "Price API non-200 response. status=%s card=%s set=%s response=%s",
+            resp.status_code,
+            card_name,
+            set_name,
+            resp.text[:300],
+        )
         return {"error": resp.text, "status": resp.status_code}
     except Exception as e:
         logger.exception("Price API request failed: %s", e)
