@@ -101,8 +101,13 @@ def fetch_card_price(card_name: str, set_name: str):
             resp.text[:300],
         )
         return {"error": resp.text, "status": resp.status_code}
-    except Exception as e:
-        logger.exception("Price API request failed: %s", e)
+
+    except requests.RequestException:
+        logger.exception(
+            "Price API request failed for card=%s set=%s",
+            card_name,
+            set_name,
+        )
         return {"error": "Request failed"}
 
 
