@@ -4,7 +4,7 @@ from django.conf import settings
 from vault.services.image_services import get_card_image_url_or_placeholder
 
 
-@patch("vault.services.image_services.fetch_card_data")
+@patch("vault.services.image_services.fetch_tcgdex_card_image_data")
 def test_get_card_image_returns_image_when_present(mock_fetch):
     mock_fetch.return_value = {"image_url": "https://example.com/img.png"}
 
@@ -17,7 +17,7 @@ def test_get_card_image_returns_image_when_present(mock_fetch):
     assert result == "https://example.com/img.png"
 
 
-@patch("vault.services.image_services.fetch_card_data")
+@patch("vault.services.image_services.fetch_tcgdex_card_image_data")
 def test_get_card_image_returns_placeholder_when_missing(mock_fetch):
     mock_fetch.return_value = {}
 
@@ -30,7 +30,7 @@ def test_get_card_image_returns_placeholder_when_missing(mock_fetch):
     assert result == settings.CARD_IMAGE_PLACEHOLDER_URL
 
 
-@patch("vault.services.image_services.fetch_card_data")
+@patch("vault.services.image_services.fetch_tcgdex_card_image_data")
 def test_get_card_image_returns_placeholder_on_exception(mock_fetch):
     mock_fetch.side_effect = Exception("API down")
 

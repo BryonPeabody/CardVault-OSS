@@ -18,9 +18,32 @@ def _pad_card_number_for_image(n: str | int) -> str:
     return s.zfill(3)
 
 
-def fetch_card_data(
+def fetch_tcgdex_card_image_data(
     card_name: str, set_name: str, card_number: str | int | None = None
 ):
+    """
+    Fetches card image metadata from the TCGdex API.
+
+    Uses IMAGE_SET_MAP normalization to convert internal set names
+    into TCGdex-compatible set codes. Filters API results by set code,
+    card number, and image availability before returning a single match.
+
+    Intended specifically for image retrieval workflows.
+
+    Called by:
+    - get_card_image_url_or_placeholder() (services/image_services.py)
+
+    Used by:
+    - refresh_prices_for_user() (services/price_services.py)
+
+    Returns:
+        dict containing:
+        - name
+        - image_url
+        - card_id
+
+        or an error dict on failure.
+    """
     # use official set name and filter through map in constants to get api set_code
     set_code = IMAGE_SET_MAP.get(set_name)
     # graceful exit if set_code not found
@@ -42,7 +65,7 @@ def fetch_card_data(
     # use list comprehension to save only cards that have that name and also the correct set_code
     prefix = f"{set_code.lower()}-"
     candidates = [c for c in data if c.get("id", "").lower().startswith(prefix)]
-    # more list comprehension to save from those only the cards with also a proper car_number
+    # more list comprehension to save from those only the cards with also a proper card_number
     if card_number:
         # calling this function ensures the card number matches the json data from this api
         # ie, '006' rather than '6'
@@ -70,6 +93,21 @@ def fetch_card_data(
 
 
 def fetch_card_price(card_name: str, set_name: str):
+    """
+    Fetches pricing data from the PokemonPriceTracker API.
+
+    Uses PRICE_SET_MAP to convert CardVault's internal set names into
+    the set codes expected by the price API. Requires CARDVAULT_API_KEY
+    to be configured in environment/settings.
+
+    Called by:
+    - CardForm (forms.py)
+    - refresh_prices_for_user() (services/price_services.py)
+
+    Returns:
+        dict:
+        API response data on success, or an error dict on failure.
+    """
     # the price API requires a key hidden in .env
     api_key = getattr(settings, "CARDVAULT_API_KEY", None)
     # if someone uses this on github and cannot access my key this will fail gracefully unless they add their own
@@ -112,6 +150,28 @@ def fetch_card_price(card_name: str, set_name: str):
 
 
 def extract_card_price(data: dict, card_number: str | int):
+    """
+    Extracts market price information for a specific card variant
+    from the PokemonPriceTracker API response.
+
+    Matches cards using normalized/padded card numbers because the API
+    stores values in formats such as "062/197" instead of plain integers.
+
+    Parses and returns:
+    - market price
+    - last updated date
+
+    Called by:
+    - CardForm (forms.py)
+    - refresh_prices_for_user() (services/price_services.py)
+
+    Returns:
+        dict containing:
+        - price
+        - price_date
+
+        or an error dict if no matching card is found.
+    """
     # Safety: ensure API returned something usable
     if not data or "data" not in data:
         logger.warning("No valid pricing data provided to extract_card_price.")

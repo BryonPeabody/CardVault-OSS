@@ -1,6 +1,6 @@
 import logging
 from django.conf import settings
-from vault.utils import fetch_card_data
+from vault.utils import fetch_tcgdex_card_image_data
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +10,7 @@ def get_card_image_url_or_placeholder(
 ) -> str:
 
     try:
-        data = fetch_card_data(card_name, set_name, card_number)
+        data = fetch_tcgdex_card_image_data(card_name, set_name, card_number)
         image_url = (data or {}).get("image_url")
         if image_url:
             return image_url
