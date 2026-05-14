@@ -13,6 +13,20 @@ class CardForm(forms.ModelForm):
         fields = ["card_name", "set_name", "language", "card_number", "condition"]
 
     def clean(self):
+        """
+        Validates card pricing data against the external price API.
+
+        Ensures the submitted card name, set, and card number can be matched
+        to a valid pricing entry before allowing form submission.
+
+        Caches parsed pricing data on self.cleaned_price so the view can
+        reuse the API result without making a second request.
+
+        Uses:
+        - fetch_card_price() (utils.py)
+        - extract_card_price() (utils.py)
+        """
+
         cleaned = super().clean()
         card_name = cleaned.get("card_name")
         set_name = cleaned.get("set_name")
