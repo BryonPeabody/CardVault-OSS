@@ -56,10 +56,27 @@ class Card(models.Model):
     price_last_updated = models.DateField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
+        """
+        Normalizes card names before saving.
+
+        Strips leading/trailing whitespace so duplicate checks and display
+        are not affected by accidental user input spacing.
+        """
         self.card_name = self.card_name.strip()
         super().save(*args, **kwargs)
 
     def clean(self):
+        """
+        Prevents a user from adding the same card to their vault more than once.
+
+        Treats cards as duplicates when the same user already has a card with
+        the same name, set, and card number. Excludes self.pk so existing cards
+        can be edited without triggering a false duplicate error.
+
+        Called by:
+        - Django model validation
+        - CardForm validation/save flow
+        """
         if not self.user_id:
             return
         if (
@@ -79,6 +96,17 @@ class Card(models.Model):
 
 
 class PriceSnapshot(models.Model):
+    """
+    Stores historical daily pricing data for a card.
+
+    Intended for:
+    - collection value history
+    - future graphing/trend features
+    - preserving historical prices independently from Card.value_usd
+
+    Enforces one snapshot per card per day.
+    """
+
     card = models.ForeignKey(
         "Card", on_delete=models.CASCADE, related_name="price_snapshots"
     )
