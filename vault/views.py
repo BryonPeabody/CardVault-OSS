@@ -64,12 +64,6 @@ class CardListView(LoginRequiredMixin, ListView):
     context_object_name = "cards"
 
     def get_queryset(self):
-        logger.warning("CARD LIST VIEW HIT")
-        try:
-            1 / 0
-        except Exception:
-            logger.exception("Test exception logging")
-
         qs = Card.objects.filter(user=self.request.user)
 
         sort = self.request.GET.get("sort", "value_desc")
