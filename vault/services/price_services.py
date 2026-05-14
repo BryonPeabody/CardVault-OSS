@@ -11,6 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 def create_initial_snapshot(card):
+    """
+    Creates or updates the initial daily PriceSnapshot for a card.
+
+    Uses update_or_create to enforce one snapshot per card per day.
+
+    Called by:
+    - CardCreateView (views.py)
+    """
     if card.value_usd is None:
         return False
 
@@ -28,6 +36,25 @@ def create_initial_snapshot(card):
 
 
 def refresh_prices_for_user(user) -> int:
+    """
+    Refreshes stale price data for all cards owned by a user.
+
+    Skips cards already updated today, attempts to heal missing/placeholder
+    image URLs, fetches current pricing data, creates or updates today's
+    PriceSnapshot, and updates the Card's cached value_usd and
+    price_last_updated fields.
+
+    Uses:
+    - get_card_image_url_or_placeholder() (services/image_services.py)
+    - fetch_card_price() (utils.py)
+    - extract_card_price() (utils.py)
+
+    Called by:
+    - refresh_prices view (views.py)
+
+    Returns:
+        int: Number of cards successfully updated with fresh price data.
+    """
     today = timezone.localdate()
     cards = Card.objects.filter(user=user)
 
