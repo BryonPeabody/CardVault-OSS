@@ -40,6 +40,19 @@ class CardCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("card-list")
 
     def form_valid(self, form):
+        """
+        Attach the logged-in user and initial API-derived data before saving a new card.
+
+        This method:
+        - assigns the current user to the card
+        - attempts to fetch and store an image URL
+        - uses price data already parsed by CardForm, if available
+        - saves the card through CreateView
+        - creates the initial PriceSnapshot after the card exists in the database
+
+        API failures should not prevent card creation; missing image or price data can be
+        healed later by the price refresh flow.
+        """
         form.instance.user = self.request.user
 
         form.instance.image_url = get_card_image_url_or_placeholder(
@@ -64,12 +77,9 @@ class CardListView(LoginRequiredMixin, ListView):
     context_object_name = "cards"
 
     def get_queryset(self):
-        logger.warning("CARD LIST VIEW HIT")
-        try:
-            1 / 0
-        except Exception:
-            logger.exception("Test exception logging")
-
+        """
+        Return only the logged-in user's cards with optional sorting.
+        """
         qs = Card.objects.filter(user=self.request.user)
 
         sort = self.request.GET.get("sort", "value_desc")
@@ -135,6 +145,12 @@ class RegisterView(CreateView):
 
 @login_required
 def collection_value_series(request):
+    """
+    Return aggregated historical collection value data as JSON for graph rendering.
+
+    The endpoint supports multiple date ranges and groups PriceSnapshot values
+    by day to produce a time series suitable for frontend charting.
+    """
     range_key = request.GET.get("range", "30d").lower()
     today = timezone.localdate()
 
@@ -155,6 +171,7 @@ def collection_value_series(request):
     if start is not None:
         qs = qs.filter(as_of_date__gte=start)
 
+    # Aggregate total collection value per day across all of user's cards
     rows = qs.values("as_of_date").annotate(total=Sum("price")).order_by("as_of_date")
 
     data = [
