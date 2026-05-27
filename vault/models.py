@@ -43,6 +43,13 @@ class Card(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    catalog_card = models.ForeignKey(
+        "CatalogCard",
+        on_delete=models.PROTECT,
+        related_name="user_cards",
+        null=True,
+        blank=True,
+    )
     card_name = models.CharField(max_length=50)
     set_name = models.CharField(max_length=25, choices=SET_CHOICES)
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES)
@@ -93,6 +100,72 @@ class Card(models.Model):
 
     def __str__(self):
         return f"{self.card_name} ({self.set_name} #{self.card_number})"
+
+
+class CatalogCard(models.Model):
+    # Core identity
+    name = models.CharField(max_length=255)
+    set_name = models.CharField(max_length=255)
+    set_code = models.CharField(max_length=50)
+    card_number = models.CharField(max_length=50)
+
+    # External API identifiers
+    tcgdex_id = models.CharField(max_length=100, blank=True, default="")
+    price_tracker_card_id = models.CharField(max_length=100, blank=True, default="")
+    tcgplayer_id = models.CharField(max_length=100, blank=True, default="")
+    tcgplayer_url = models.URLField(blank=True, default="")
+
+    # Display/search metadata
+    rarity = models.CharField(max_length=100, blank=True, default="")
+    image_url = models.URLField(blank=True, default="")
+    artist = models.CharField(max_length=255, blank=True, default="")
+
+    # Variant/printing metadata
+    printings_available = models.JSONField(default=list, blank=True)
+    variants = models.JSONField(default=dict, blank=True)
+
+    # Current cached pricing
+    market_price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    low_price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    price_last_updated = models.DateTimeField(null=True, blank=True)
+
+    # Legal meta data
+    regulation_mark = models.CharField(max_length=10, blank=True, default="")
+    standard_legal = models.BooleanField(null=True, blank=True)
+    expanded_legal = models.BooleanField(null=True, blank=True)
+
+    # Raw API payloads
+    tcgdex_raw_data = models.JSONField(default=dict, blank=True)
+    price_tracker_raw_data = models.JSONField(default=dict, blank=True)
+
+    # Sync/admin fields
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["set_code", "card_number", "name"],
+                name="uniq_catalog_card_identity",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["name"]),
+            models.Index(fields=["set_name"]),
+            models.Index(fields=["set_code", "card_number"]),
+            models.Index(fields=["tcgdex_id"]),
+            models.Index(fields=["tcgplayer_id"]),
+            models.Index(fields=["price_tracker_card_id"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.set_name} #{self.card_number}"
 
 
 class PriceSnapshot(models.Model):
