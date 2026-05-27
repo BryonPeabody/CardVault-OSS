@@ -12,6 +12,29 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+    """
+    Import Pokémon card catalog data from the Pokémon Price Tracker API
+    into the CatalogCard model for a single set.
+
+    This command fetches all cards for a provided set ID using the
+    `fetchAllInSet=true` API parameter and stores or updates catalog
+    records using stable external identifiers.
+
+    Cards are matched using `price_tracker_card_id` to ensure the
+    importer is idempotent and safe to rerun without creating duplicates.
+
+    Imported data includes:
+    - Card identity data (name, set, card number)
+    - External API identifiers
+    - Image URLs
+    - Variant and printing metadata
+    - Cached market pricing data
+    - Artist and rarity metadata
+
+    Example usage:
+        python manage.py import_catalog --set-id 23821
+    """
+
     help = "Import CatalogCard records for one Pokémon set from Pokémon Price Tracker."
 
     API_URL = "https://www.pokemonpricetracker.com/api/v2/cards"
