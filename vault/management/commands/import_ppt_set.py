@@ -32,7 +32,7 @@ class Command(BaseCommand):
     - Artist and rarity metadata
 
     Example usage:
-        python manage.py import_catalog --set-id 23821
+        python manage.py import_ppt_set --set-id 23821
     """
 
     help = "Import CatalogCard records for one Pokémon set from Pokémon Price Tracker."
