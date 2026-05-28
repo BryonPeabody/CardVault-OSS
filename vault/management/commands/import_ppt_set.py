@@ -140,6 +140,7 @@ class Command(BaseCommand):
                     "regulation_mark": "",
                     "standard_legal": None,
                     "expanded_legal": None,
+                    "price_tracker_raw_data": item,
                 },
             )
 

@@ -111,8 +111,10 @@ class CatalogCard(models.Model):
 
     # External API identifiers
     tcgdex_id = models.CharField(max_length=100, blank=True, default="")
-    price_tracker_card_id = models.CharField(max_length=100, blank=True, default="")
-    tcgplayer_id = models.CharField(max_length=100, blank=True, default="")
+    price_tracker_card_id = models.CharField(
+        max_length=100, unique=True, null=True, blank=True
+    )
+    tcgplayer_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     tcgplayer_url = models.URLField(blank=True, default="")
 
     # Display/search metadata
@@ -151,7 +153,7 @@ class CatalogCard(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["set_code", "card_number", "name"],
+                fields=["set_code", "card_number", "name", "tcgplayer_id"],
                 name="uniq_catalog_card_identity",
             )
         ]
